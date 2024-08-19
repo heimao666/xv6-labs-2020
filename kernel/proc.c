@@ -150,6 +150,7 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->trace_mask = 0;
 }
 
 // Create a user page table for a given process,
@@ -277,8 +278,12 @@ fork(void)
 
   np->parent = p;
 
+  // copy trace mask in the child .  xx
+  np->trace_mask = p->trace_mask;
+ 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
+
 
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
@@ -692,4 +697,19 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+uint64 acquire_nproc(){
+  struct proc *p;
+  int cnt=0;
+
+  for(p = proc; p < &proc[NPROC]; p++) {
+    // acquire(&p->lock);
+    // 不需要锁进程 proc 结构，因为我们只需要读取进程列表，不需要写
+    if(p->state != UNUSED) {
+      cnt++;
+    } 
+    // release(&p->lock);
+  }
+  return cnt;
 }
